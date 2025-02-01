@@ -1,9 +1,11 @@
 import express from "express";
 import { OpenAI } from "openai";
+import cors from "cors";
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(cors);
 // Middleware to parse JSON request bodies
 app.use(express.json());
 
@@ -53,7 +55,6 @@ Guidelines:
 Please write the letter in a clear, well-structured format.`,
         },
       ],
-      temperature: 0.7,
     });
 
     res.json({ letter: response.choices[0].message.content });
@@ -85,8 +86,6 @@ app.post("/customize-letter", async (req, res) => {
     }
 
     // Determine max tokens based on length
-    const tokenMap = { short: 250, medium: 500, long: 750 };
-    const maxTokens = tokenMap[length] || 500;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4",
@@ -110,8 +109,6 @@ Guidelines:
 Provide the revised version of the letter.`,
         },
       ],
-      max_tokens: maxTokens,
-      temperature: 0.7,
     });
 
     res.json({ updatedLetter: response.choices[0].message.content });

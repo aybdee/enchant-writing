@@ -6,10 +6,16 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
-// Middleware to parse JSON request bodies
 app.use(express.json());
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Word count mapping
+const wordCountMap = {
+  short: 100,
+  medium: 150,
+  long: 200,
+};
 
 // API endpoint to generate a letter
 app.post("/generate-letter", async (req, res) => {
@@ -20,7 +26,7 @@ app.post("/generate-letter", async (req, res) => {
       tone = "romantic",
       message,
       specialDetails = "",
-      length = "medium", // New parameter: short, medium, long
+      length = "medium",
     } = req.body;
 
     if (!sender || !recipient || !message) {
@@ -29,11 +35,15 @@ app.post("/generate-letter", async (req, res) => {
       });
     }
 
-    // Determine max tokens based on length
+    const wordLimit = wordCountMap[length] || 150;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
+        {
+          role: "system",
+          content: `You are an assistant that generates letters strictly based on user-provided details. Do not invent events, memories, or details that were not given. Keep the response within approximately ${wordLimit} words.`,
+        },
         {
           role: "user",
           content: `Write a ${tone} letter based on the following details:
@@ -47,12 +57,9 @@ Special moments/memories/things to include: ${specialDetails}
 
 Guidelines:
 - Maintain a ${tone} tone throughout the letter
-- Include the provided special moments and memories naturally in the text
-- Make the letter personal and meaningful
-- Ensure proper letter formatting with appropriate spacing
-- The length should be ${length} (short, medium, or long)
-
-Please write the letter in a clear, well-structured format.`,
+- Do NOT add fictional elements or make up details
+- Use only the provided information
+- Keep the letter concise and within ~${wordLimit} words`,
         },
       ],
     });
@@ -75,7 +82,7 @@ app.post("/customize-letter", async (req, res) => {
       specialDetails = "",
       length = "medium",
       existingLetter,
-      changes, // New field: describes the modifications
+      changes,
     } = req.body;
 
     if (!sender || !recipient || !message || !existingLetter || !changes) {
@@ -85,11 +92,15 @@ app.post("/customize-letter", async (req, res) => {
       });
     }
 
-    // Determine max tokens based on length
+    const wordLimit = wordCountMap[length] || 150;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
+        {
+          role: "system",
+          content: `You are an assistant that modifies letters based on user requests. Do not introduce new events, memories, or fictional elements. Ensure that changes are applied accurately while keeping the response within ~${wordLimit} words.`,
+        },
         {
           role: "user",
           content: `Modify the following letter based on the given instructions:
@@ -102,12 +113,10 @@ ${changes}
 
 Guidelines:
 - Maintain a ${tone} tone throughout the letter
-- Ensure that all requested changes are incorporated
+- Do NOT make up details
+- Ensure requested changes are accurately applied
 - Keep the formatting clear and structured
-- The length should be ${length} (short, medium, or long)
-- Regardless of the length, keep it straight to the point, dont ramble too much
-
-Provide the revised version of the letter.`,
+- Keep the letter concise and within ~${wordLimit} words.`,
         },
       ],
     });

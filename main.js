@@ -5,7 +5,7 @@ import cors from "cors";
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors);
+app.use(cors());
 // Middleware to parse JSON request bodies
 app.use(express.json());
 
@@ -105,6 +105,7 @@ Guidelines:
 - Ensure that all requested changes are incorporated
 - Keep the formatting clear and structured
 - The length should be ${length} (short, medium, or long)
+- Regardless of the length, keep it straight to the point, dont ramble too much
 
 Provide the revised version of the letter.`,
         },
